@@ -14,47 +14,49 @@
 
     <main>
         <x-ui.section class="py-8 sm:py-10">
-            <x-ui.card title="Je gegevens" description="Log in met je e-mailadres en wachtwoord.">
-                <form method="POST" action="{{ route('login.store') }}" class="grid gap-4">
-                    @csrf
+            <div class="mx-auto max-w-xl">
+                <x-ui.card title="Je gegevens" description="Log in met je e-mailadres en wachtwoord.">
+                    <form method="POST" action="{{ route('login.store') }}" class="grid gap-4">
+                        @csrf
 
-                    <x-ui.input
-                        name="email"
-                        type="email"
-                        label="E-mail"
-                        value="{{ old('email') }}"
-                        autocomplete="email"
-                        maxlength="255"
-                        required
-                        error="{{ $errors->first('email') }}"
-                    />
+                        <x-ui.input
+                            name="email"
+                            type="email"
+                            label="E-mail"
+                            value="{{ old('email') }}"
+                            autocomplete="email"
+                            maxlength="255"
+                            required
+                            error="{{ $errors->first('email') }}"
+                        />
 
-                    <x-ui.input
-                        name="password"
-                        type="password"
-                        label="Wachtwoord"
-                        autocomplete="current-password"
-                        required
-                        error="{{ $errors->first('password') }}"
-                    />
+                        <x-ui.input
+                            name="password"
+                            type="password"
+                            label="Wachtwoord"
+                            autocomplete="current-password"
+                            required
+                            error="{{ $errors->first('password') }}"
+                        />
 
-                    <label class="flex items-center gap-3 text-sm text-muted">
-                        <input
-                            type="checkbox"
-                            name="remember"
-                            value="1"
-                            class="app-focus size-4 rounded border-line text-brand-600"
-                            @checked(old('remember'))
-                        >
-                        Ingelogd blijven
-                    </label>
+                        <label class="flex items-center gap-3 text-sm text-muted">
+                            <input
+                                type="checkbox"
+                                name="remember"
+                                value="1"
+                                class="app-focus size-4 rounded border-line text-brand-600"
+                                @checked(old('remember'))
+                            >
+                            Ingelogd blijven
+                        </label>
 
-                    <div class="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
-                        <x-ui.button variant="secondary" href="{{ route('home') }}">Annuleren</x-ui.button>
-                        <x-ui.button type="submit">Inloggen</x-ui.button>
-                    </div>
-                </form>
-            </x-ui.card>
+                        <div class="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
+                            <x-ui.button variant="secondary" href="{{ route('home') }}">Annuleren</x-ui.button>
+                            <x-ui.button type="submit">Inloggen</x-ui.button>
+                        </div>
+                    </form>
+                </x-ui.card>
+            </div>
         </x-ui.section>
     </main>
 </x-app-layout>

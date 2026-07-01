@@ -39,4 +39,23 @@
     .app-focus {
         @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500;
     }
+
+    .flash-message {
+        animation: flash-hide 3s ease forwards;
+    }
+}
+
+@keyframes flash-hide {
+    0%,
+    80% {
+        opacity: 1;
+        max-height: 80px;
+    }
+
+    100% {
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+        border-width: 0;
+    }
 }

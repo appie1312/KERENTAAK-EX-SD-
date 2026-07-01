@@ -22,7 +22,10 @@ class RegisteredUserController extends Controller
     public function store(StoreRegisteredUserRequest $request, TechnicalLogger $technicalLogger): RedirectResponse
     {
         try {
-            $user = User::query()->create($request->validated());
+            $user = User::query()->create([
+                ...$request->validated(),
+                'role' => User::ROLE_CUSTOMER,
+            ]);
 
             Auth::login($user);
             $request->session()->regenerate();
