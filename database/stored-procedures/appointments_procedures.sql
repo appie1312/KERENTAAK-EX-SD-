@@ -7,6 +7,7 @@ DROP PROCEDURE IF EXISTS sp_get_customer_appointments;
 DROP PROCEDURE IF EXISTS sp_create_appointment;
 DROP PROCEDURE IF EXISTS sp_update_appointment;
 DROP PROCEDURE IF EXISTS sp_cancel_appointment;
+DROP PROCEDURE IF EXISTS sp_delete_appointment;
 
 DELIMITER //
 
@@ -36,6 +37,22 @@ BEGIN
     SELECT 'Extensions', 'Haar', 120, 120.00, 'Extensions plaatsen'
     WHERE NOT EXISTS (SELECT 1 FROM behandelingen WHERE naam = 'Extensions');
 
+    INSERT INTO specialisaties (naam, omschrijving)
+    SELECT 'Knippen', 'Knippen en modelleren'
+    WHERE NOT EXISTS (SELECT 1 FROM specialisaties WHERE naam = 'Knippen');
+
+    INSERT INTO specialisaties (naam, omschrijving)
+    SELECT 'Kleuren', 'Kleurbehandelingen uitvoeren'
+    WHERE NOT EXISTS (SELECT 1 FROM specialisaties WHERE naam = 'Kleuren');
+
+    INSERT INTO specialisaties (naam, omschrijving)
+    SELECT 'Stylen', 'Haar stylen en finishen'
+    WHERE NOT EXISTS (SELECT 1 FROM specialisaties WHERE naam = 'Stylen');
+
+    INSERT INTO specialisaties (naam, omschrijving)
+    SELECT 'Extensions', 'Extensions plaatsen en verzorgen'
+    WHERE NOT EXISTS (SELECT 1 FROM specialisaties WHERE naam = 'Extensions');
+
     INSERT INTO medewerkers (voornaam, achternaam, email, functie)
     SELECT 'Yassin', 'Attiah', 'yassin.attiah@kniplokettiko.nl', 'Kapper'
     WHERE NOT EXISTS (SELECT 1 FROM medewerkers WHERE email = 'yassin.attiah@kniplokettiko.nl');
@@ -43,6 +60,58 @@ BEGIN
     INSERT INTO medewerkers (voornaam, achternaam, email, functie)
     SELECT 'Mohammad', 'Abdullah', 'mohammad.abdullah@kniplokettiko.nl', 'Stylist'
     WHERE NOT EXISTS (SELECT 1 FROM medewerkers WHERE email = 'mohammad.abdullah@kniplokettiko.nl');
+
+    INSERT INTO medewerkers (voornaam, achternaam, email, functie)
+    SELECT 'Amina', 'El Idrissi', 'amina.elidrissi@kniplokettiko.nl', 'Extensions specialist'
+    WHERE NOT EXISTS (SELECT 1 FROM medewerkers WHERE email = 'amina.elidrissi@kniplokettiko.nl');
+
+    INSERT INTO medewerkers (voornaam, achternaam, email, functie)
+    SELECT 'Sara', 'Bakker', 'sara.bakker@kniplokettiko.nl', 'Colorist'
+    WHERE NOT EXISTS (SELECT 1 FROM medewerkers WHERE email = 'sara.bakker@kniplokettiko.nl');
+
+    INSERT INTO medewerkers (voornaam, achternaam, email, functie)
+    SELECT 'Omar', 'Hassan', 'omar.hassan@kniplokettiko.nl', 'Kapper'
+    WHERE NOT EXISTS (SELECT 1 FROM medewerkers WHERE email = 'omar.hassan@kniplokettiko.nl');
+
+    INSERT INTO medewerkers (voornaam, achternaam, email, functie)
+    SELECT 'Noor', 'Smit', 'noor.smit@kniplokettiko.nl', 'Stylist'
+    WHERE NOT EXISTS (SELECT 1 FROM medewerkers WHERE email = 'noor.smit@kniplokettiko.nl');
+
+    INSERT IGNORE INTO medewerkers_specialisaties (medewerker_id, specialisatie_id)
+    SELECT medewerkers.id, specialisaties.id
+    FROM medewerkers
+    INNER JOIN specialisaties ON specialisaties.naam IN ('Knippen', 'Kleuren')
+    WHERE medewerkers.email = 'yassin.attiah@kniplokettiko.nl';
+
+    INSERT IGNORE INTO medewerkers_specialisaties (medewerker_id, specialisatie_id)
+    SELECT medewerkers.id, specialisaties.id
+    FROM medewerkers
+    INNER JOIN specialisaties ON specialisaties.naam = 'Stylen'
+    WHERE medewerkers.email = 'mohammad.abdullah@kniplokettiko.nl';
+
+    INSERT IGNORE INTO medewerkers_specialisaties (medewerker_id, specialisatie_id)
+    SELECT medewerkers.id, specialisaties.id
+    FROM medewerkers
+    INNER JOIN specialisaties ON specialisaties.naam = 'Extensions'
+    WHERE medewerkers.email = 'amina.elidrissi@kniplokettiko.nl';
+
+    INSERT IGNORE INTO medewerkers_specialisaties (medewerker_id, specialisatie_id)
+    SELECT medewerkers.id, specialisaties.id
+    FROM medewerkers
+    INNER JOIN specialisaties ON specialisaties.naam IN ('Kleuren', 'Stylen')
+    WHERE medewerkers.email = 'sara.bakker@kniplokettiko.nl';
+
+    INSERT IGNORE INTO medewerkers_specialisaties (medewerker_id, specialisatie_id)
+    SELECT medewerkers.id, specialisaties.id
+    FROM medewerkers
+    INNER JOIN specialisaties ON specialisaties.naam = 'Knippen'
+    WHERE medewerkers.email = 'omar.hassan@kniplokettiko.nl';
+
+    INSERT IGNORE INTO medewerkers_specialisaties (medewerker_id, specialisatie_id)
+    SELECT medewerkers.id, specialisaties.id
+    FROM medewerkers
+    INNER JOIN specialisaties ON specialisaties.naam IN ('Extensions', 'Kleuren')
+    WHERE medewerkers.email = 'noor.smit@kniplokettiko.nl';
 END //
 
 CREATE PROCEDURE sp_ensure_customer_for_user(IN p_user_id BIGINT UNSIGNED)
@@ -146,13 +215,14 @@ CREATE PROCEDURE sp_create_appointment(
     IN p_start_time TIME
 )
 BEGIN
+    DECLARE v_treatment_name VARCHAR(100);
     DECLARE v_duration SMALLINT UNSIGNED;
     DECLARE v_price DECIMAL(7,2);
     DECLARE v_end_time TIME;
     DECLARE v_overlap_count INT DEFAULT 0;
     DECLARE v_appointment_id BIGINT UNSIGNED;
 
-    SELECT duur, prijs INTO v_duration, v_price
+    SELECT naam, duur, prijs INTO v_treatment_name, v_duration, v_price
     FROM behandelingen
     WHERE id = p_treatment_id
         AND is_actief = 1
@@ -166,11 +236,31 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Deze medewerker is niet beschikbaar';
     END IF;
 
+    IF NOT EXISTS (
+        SELECT 1
+        FROM medewerkers_specialisaties
+        INNER JOIN specialisaties
+            ON specialisaties.id = medewerkers_specialisaties.specialisatie_id
+        WHERE medewerkers_specialisaties.medewerker_id = p_employee_id
+            AND specialisaties.naam = v_treatment_name
+            AND specialisaties.is_actief = 1
+    ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Deze medewerker kan deze behandeling niet uitvoeren';
+    END IF;
+
     IF CAST(CONCAT(p_date, ' ', p_start_time) AS DATETIME) <= NOW() THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Dit tijdstip is niet beschikbaar';
     END IF;
 
+    IF SECOND(p_start_time) <> 0 OR MINUTE(p_start_time) NOT IN (0, 15, 30, 45) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Kies een starttijd in stappen van 15 minuten';
+    END IF;
+
     SET v_end_time = ADDTIME(p_start_time, SEC_TO_TIME(v_duration * 60));
+
+    IF p_start_time < '09:00:00' OR v_end_time > '19:00:00' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Afspraken kunnen alleen tussen 09:00 en 19:00 worden gepland';
+    END IF;
 
     SELECT COUNT(*) INTO v_overlap_count
     FROM afspraken
@@ -205,6 +295,7 @@ CREATE PROCEDURE sp_update_appointment(
     IN p_start_time TIME
 )
 BEGIN
+    DECLARE v_treatment_name VARCHAR(100);
     DECLARE v_duration SMALLINT UNSIGNED;
     DECLARE v_price DECIMAL(7,2);
     DECLARE v_end_time TIME;
@@ -221,7 +312,17 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Deze afspraak kan niet gewijzigd worden';
     END IF;
 
-    SELECT duur, prijs INTO v_duration, v_price
+    IF EXISTS (
+        SELECT 1
+        FROM afspraken
+        WHERE id = p_appointment_id
+            AND klant_id = p_customer_id
+            AND datum <= CURDATE()
+    ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Deze afspraak kan op de dag zelf niet meer gewijzigd worden';
+    END IF;
+
+    SELECT naam, duur, prijs INTO v_treatment_name, v_duration, v_price
     FROM behandelingen
     WHERE id = p_treatment_id
         AND is_actief = 1
@@ -231,11 +332,40 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Deze behandeling is niet beschikbaar';
     END IF;
 
+    IF NOT EXISTS (
+        SELECT 1
+        FROM medewerkers
+        WHERE id = p_employee_id
+            AND is_actief = 1
+    ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Deze medewerker is niet beschikbaar';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM medewerkers_specialisaties
+        INNER JOIN specialisaties
+            ON specialisaties.id = medewerkers_specialisaties.specialisatie_id
+        WHERE medewerkers_specialisaties.medewerker_id = p_employee_id
+            AND specialisaties.naam = v_treatment_name
+            AND specialisaties.is_actief = 1
+    ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Deze medewerker kan deze behandeling niet uitvoeren';
+    END IF;
+
     IF CAST(CONCAT(p_date, ' ', p_start_time) AS DATETIME) <= NOW() THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Dit tijdstip is niet beschikbaar';
     END IF;
 
+    IF SECOND(p_start_time) <> 0 OR MINUTE(p_start_time) NOT IN (0, 15, 30, 45) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Kies een starttijd in stappen van 15 minuten';
+    END IF;
+
     SET v_end_time = ADDTIME(p_start_time, SEC_TO_TIME(v_duration * 60));
+
+    IF p_start_time < '09:00:00' OR v_end_time > '19:00:00' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Afspraken kunnen alleen tussen 09:00 en 19:00 worden gepland';
+    END IF;
 
     SELECT COUNT(*) INTO v_overlap_count
     FROM afspraken
@@ -280,7 +410,7 @@ BEGIN
             AND klant_id = p_customer_id
             AND status = 'Gepland'
             AND is_actief = 1
-            AND CAST(CONCAT(datum, ' ', starttijd) AS DATETIME) > NOW()
+            AND datum > CURDATE()
     ) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Deze afspraak kan niet meer geannuleerd worden';
     END IF;
@@ -293,6 +423,14 @@ BEGIN
         AND klant_id = p_customer_id;
 
     SELECT p_appointment_id AS appointment_id;
+END //
+
+CREATE PROCEDURE sp_delete_appointment(
+    IN p_appointment_id BIGINT UNSIGNED,
+    IN p_customer_id BIGINT UNSIGNED
+)
+BEGIN
+    CALL sp_cancel_appointment(p_appointment_id, p_customer_id);
 END //
 
 DELIMITER ;

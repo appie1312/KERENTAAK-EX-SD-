@@ -80,7 +80,23 @@
 
         <div class="col-sm-6 col-lg-4">
             <label for="starttijd" class="form-label fw-semibold">Starttijd</label>
-            <input id="starttijd" name="starttijd" type="time" value="{{ $currentStartTime }}" min="09:00" max="17:00" step="900" class="form-control" required>
+            <select id="starttijd" name="starttijd" class="form-select" required>
+                <option value="">Kies een tijd</option>
+
+                @for ($hour = 0; $hour < 24; $hour++)
+                    @foreach ([0, 15, 30, 45] as $minute)
+                        @php
+                            $timeValue = sprintf('%02d:%02d', $hour, $minute);
+                        @endphp
+
+                        <option value="{{ $timeValue }}" @selected($currentStartTime === $timeValue)>
+                            {{ $timeValue }}
+                        </option>
+                    @endforeach
+                @endfor
+
+                <option value="24:00" disabled>24:00</option>
+            </select>
             @error('starttijd')
                 <p class="text-danger small mt-2 mb-0">{{ $message }}</p>
             @enderror
