@@ -83,7 +83,7 @@
             <select id="starttijd" name="starttijd" class="form-select" required>
                 <option value="">Kies een tijd</option>
 
-                @for ($hour = 0; $hour < 24; $hour++)
+                @for ($hour = 9; $hour < 19; $hour++)
                     @foreach ([0, 15, 30, 45] as $minute)
                         @php
                             $timeValue = sprintf('%02d:%02d', $hour, $minute);
@@ -95,7 +95,7 @@
                     @endforeach
                 @endfor
 
-                <option value="24:00" disabled>24:00</option>
+                <option value="19:00" disabled>19:00 gesloten</option>
             </select>
             @error('starttijd')
                 <p class="text-danger small mt-2 mb-0">{{ $message }}</p>
