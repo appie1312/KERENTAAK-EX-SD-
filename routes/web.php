@@ -21,6 +21,7 @@ Route::middleware('guest')->group(function (): void {
 
 Route::middleware('auth')->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::resource('medewerkers', MedewerkerController::class)->except(['show'])->names('medewerkers');
     Route::get('/bestellingen', [BestellingController::class, 'index'])->name('bestellingen.index');
     Route::get('/bestellingen/toevoegen', [BestellingController::class, 'create'])->name('bestellingen.create');
     Route::post('/bestellingen', [BestellingController::class, 'store'])->name('bestellingen.store');
