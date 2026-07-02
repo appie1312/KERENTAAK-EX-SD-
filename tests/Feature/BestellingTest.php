@@ -76,6 +76,16 @@ it('voegt een nieuwe bestelling toe', function (): void {
     ]);
 });
 
+it('toont validatiefouten bij het aanmaken van een bestelling met een ongeldige productselectie', function (): void {
+    $this->actingAs(bestellingUser())
+        ->post(route('bestellingen.store'), bestellingPayload(['product_id' => 999999]))
+        ->assertSessionHasErrors(['product_id']);
+
+    $this->assertDatabaseMissing('bestellingen', [
+        'klant_naam' => 'Sara De Vries',
+    ]);
+});
+
 it('wijzigt een bestelling', function (): void {
     $bestellingId = DB::table('bestellingen')->where('klant_naam', 'Fatima Jansen')->value('id');
 
@@ -127,6 +137,12 @@ it('toont een melding als een bestelling al verwijderd was', function (): void {
     $this->actingAs(bestellingUser())
         ->delete(route('bestellingen.destroy', $bestellingId))
         ->assertSessionHas('error', 'Bestelling was al verwijderd.');
+});
+
+it('toont 404 wanneer een niet-bestaande bestelling wordt opgevraagd', function (): void {
+    $this->actingAs(bestellingUser())
+        ->get(route('bestellingen.show', 999999))
+        ->assertNotFound();
 });
 
 it('toont de bestelde producten in een tabel op de bestelling detailpagina', function (): void {
