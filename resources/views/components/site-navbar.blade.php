@@ -22,6 +22,9 @@
                 <x-ui.button :variant="$secondaryVariant" href="{{ route('home') }}">Homepage</x-ui.button>
 
                 @auth
+                    @if (auth()->user()->isOwner() || auth()->user()->isEmployee())
+                        <x-ui.button :variant="$secondaryVariant" href="{{ route('products.index') }}">Producten</x-ui.button>
+                    @endif
                     <x-ui.button href="{{ route('profile') }}">Profiel</x-ui.button>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
