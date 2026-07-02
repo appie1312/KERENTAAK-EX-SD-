@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BestellingController;
@@ -37,6 +38,12 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/bestellingen/{bestelling}/producten/{product}/wijzigen', [BestellingController::class, 'editProduct'])->name('bestellingen.producten.edit');
     Route::put('/bestellingen/{bestelling}/producten/{product}', [BestellingController::class, 'updateProduct'])->name('bestellingen.producten.update');
     Route::delete('/bestellingen/{bestelling}/producten/{product}', [BestellingController::class, 'destroyProduct'])->name('bestellingen.producten.destroy');
+    Route::get('/afspraken', [AppointmentController::class, 'index'])->name('appointments.index');
+    Route::get('/afspraken/nieuw', [AppointmentController::class, 'create'])->name('appointments.create');
+    Route::post('/afspraken', [AppointmentController::class, 'store'])->name('appointments.store');
+    Route::get('/afspraken/{appointment}/wijzigen', [AppointmentController::class, 'edit'])->name('appointments.edit');
+    Route::put('/afspraken/{appointment}', [AppointmentController::class, 'update'])->name('appointments.update');
+    Route::patch('/afspraken/{appointment}/annuleren', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
     Route::get('/profiel', function () {
         return view('profile.show');
     })->name('profile');
