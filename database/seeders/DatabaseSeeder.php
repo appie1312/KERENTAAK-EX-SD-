@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Bestelling;
 use App\Models\Medewerker;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -99,5 +100,45 @@ class DatabaseSeeder extends Seeder
                 'phone' => '0613344556',
             ],
         );
+
+        $bestellingen = [
+            [
+                'klant_naam' => 'Sanne Bakker',
+                'orderdatum' => now()->subDays(2)->toDateString(),
+                'verwachte_leverdatum' => now()->addDays(3)->toDateString(),
+                'status' => 'Nieuw',
+                'totaalprijs' => 125.50,
+                'opmerking' => 'Behandelingen voor klant.',
+                'is_actief' => true,
+            ],
+            [
+                'klant_naam' => 'Lisa Jansen',
+                'orderdatum' => now()->subDays(5)->toDateString(),
+                'verwachte_leverdatum' => now()->subDays(1)->toDateString(),
+                'status' => 'In behandeling',
+                'totaalprijs' => 89.00,
+                'opmerking' => 'Reeds bevestigd.',
+                'is_actief' => true,
+            ],
+            [
+                'klant_naam' => 'Daan Smit',
+                'orderdatum' => now()->subDays(10)->toDateString(),
+                'verwachte_leverdatum' => now()->addDays(1)->toDateString(),
+                'status' => 'Afgerond',
+                'totaalprijs' => 240.75,
+                'opmerking' => 'Voltooide order.',
+                'is_actief' => true,
+            ],
+        ];
+
+        foreach ($bestellingen as $bestelling) {
+            Bestelling::query()->updateOrCreate(
+                [
+                    'klant_naam' => $bestelling['klant_naam'],
+                    'orderdatum' => $bestelling['orderdatum'],
+                ],
+                $bestelling,
+            );
+        }
     }
 }
