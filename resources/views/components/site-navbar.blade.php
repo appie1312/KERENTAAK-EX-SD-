@@ -23,7 +23,7 @@
 
                 @auth
                     @if (auth()->user()->isOwner() || auth()->user()->isEmployee())
-                        <x-ui.button :variant="$secondaryVariant" href="{{ route('products.index') }}">Producten</x-ui.button>
+                        <x-ui.button :variant="$secondaryVariant" href="{{ route('bestellingen.index') }}">Bestellingen</x-ui.button>
                     @endif
                     <x-ui.button href="{{ route('profile') }}">Profiel</x-ui.button>
                     <form method="POST" action="{{ route('logout') }}">
