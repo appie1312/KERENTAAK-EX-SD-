@@ -66,6 +66,15 @@ class AppointmentController extends Controller
                 ->route('appointments.index')
                 ->with('status', 'Je afspraak is bevestigd.');
         } catch (QueryException $exception) {
+            $technicalLogger->record('appointment_create_failed', 'Afspraak aanmaken mislukt.', auth()->id(), [
+                'customer_id' => $customerId,
+                'treatment_id' => $request->integer('behandeling_id'),
+                'employee_id' => $request->integer('medewerker_id'),
+                'date' => $request->date('datum')?->format('Y-m-d'),
+                'start_time' => $request->string('starttijd')->toString(),
+                'error' => $this->storedProcedureErrorMessage($exception),
+            ]);
+
             return $this->backWithStoredProcedureError($exception, 'Deze medewerker is op dit tijdstip niet beschikbaar');
         } catch (Throwable $exception) {
             Log::error('Afspraak aanmaken mislukt.', ['exception' => $exception]);
@@ -82,6 +91,11 @@ class AppointmentController extends Controller
         $appointmentDetails = $this->appointmentForCustomer($appointment, $customerId);
 
         if ($appointmentDetails === null) {
+            $technicalLogger->record('appointment_edit_failed', 'Afspraak wijzigen geopend voor onbekende afspraak.', auth()->id(), [
+                'appointment_id' => $appointment,
+                'customer_id' => $customerId,
+            ]);
+
             return redirect()
                 ->route('appointments.index')
                 ->with('error', 'Afspraak niet gevonden.');
@@ -121,6 +135,16 @@ class AppointmentController extends Controller
                 ->route('appointments.index')
                 ->with('status', 'Je afspraak is gewijzigd.');
         } catch (QueryException $exception) {
+            $technicalLogger->record('appointment_update_failed', 'Afspraak wijzigen mislukt.', auth()->id(), [
+                'appointment_id' => $appointment,
+                'customer_id' => $customerId,
+                'treatment_id' => $request->integer('behandeling_id'),
+                'employee_id' => $request->integer('medewerker_id'),
+                'date' => $request->date('datum')?->format('Y-m-d'),
+                'start_time' => $request->string('starttijd')->toString(),
+                'error' => $this->storedProcedureErrorMessage($exception),
+            ]);
+
             return $this->backWithStoredProcedureError($exception, 'Dit tijdstip is niet beschikbaar');
         } catch (Throwable $exception) {
             Log::error('Afspraak wijzigen mislukt.', ['exception' => $exception]);
@@ -147,6 +171,12 @@ class AppointmentController extends Controller
                 ->route('appointments.index')
                 ->with('status', 'Je afspraak is geannuleerd.');
         } catch (QueryException $exception) {
+            $technicalLogger->record('appointment_cancel_failed', 'Afspraak annuleren mislukt.', auth()->id(), [
+                'appointment_id' => $appointment,
+                'customer_id' => $customerId,
+                'error' => $this->storedProcedureErrorMessage($exception),
+            ]);
+
             return $this->backWithStoredProcedureError($exception, 'Deze afspraak kan niet meer geannuleerd worden');
         }
     }
@@ -204,10 +234,15 @@ class AppointmentController extends Controller
 
     private function backWithStoredProcedureError(QueryException $exception, string $fallbackMessage): RedirectResponse
     {
-        $message = $exception->errorInfo[2] ?? $fallbackMessage;
+        $message = $this->storedProcedureErrorMessage($exception) ?? $fallbackMessage;
 
         return back()
             ->withInput()
             ->with('error', $message ?: $fallbackMessage);
+    }
+
+    private function storedProcedureErrorMessage(QueryException $exception): ?string
+    {
+        return $exception->errorInfo[2] ?? null;
     }
 }
